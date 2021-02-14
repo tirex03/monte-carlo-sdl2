@@ -1,8 +1,6 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <time.h>
 #include <sodium.h>
 #include <string.h>
 
@@ -11,20 +9,6 @@
 
 double random_norm(){
     return (2 * (int)(randombytes_random() & 1) - 1) * (randombytes_random() / (double)(0xffffffff));
-}
-
-size_t fill_point_buffer(SDL_Point * point_buffer, char * point_tab){
-    int ix = 0;
-    for(int x = 0; x<SCREEN_WIDTH; x++){
-        for(int y = 0; y<SCREEN_HEIGHT; y++){
-            if(point_tab[x + y * SCREEN_WIDTH]){
-                point_buffer[ix].x = x;
-                point_buffer[ix].y = y;
-                ix++;
-            }
-        }
-    }
-    return ix;
 }
 
 int create_char_texture(SDL_Renderer* renderer, char* filename, SDL_Texture** char_texture){
@@ -64,10 +48,16 @@ void draw_chars(SDL_Renderer* renderer, SDL_Texture* char_texture, int* charidxs
     }
 }
 
+void draw_pixel(SDL_Renderer* renderer, SDL_Texture* canvas, SDL_Color* color, int x, int y){
+    SDL_SetRenderTarget(renderer, canvas);
+    SDL_SetRenderDrawColor(renderer, color->r, color->g, color->b, color->a);
+    SDL_RenderDrawPoint(renderer, x, y);
+    SDL_SetRenderTarget(renderer, NULL);
+}
+
 int main(){
     SDL_Window* window = NULL;
     SDL_Renderer * renderer = NULL;
-    SDL_Surface* screenSurface = NULL;
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "SDL_Init failed: %s\n", SDL_GetError());
         return 1;
@@ -91,18 +81,26 @@ int main(){
         return 1;
     }
 
+    SDL_Color color1;
+    color1.r = 0xFF;
+    color1.g = 0x00;
+    color1.b = 0xFF;
+    color1.a = 0xFF;
+
+    SDL_Color color2;
+    color2.r = 0x00;
+    color2.g = 0xFF;
+    color2.b = 0xFF;
+    color2.a = 0xFF;
+
+    SDL_Texture* canvas = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_SetRenderTarget(renderer, canvas);
+    SDL_RenderFillRect(renderer, NULL);
+    SDL_SetRenderTarget(renderer, NULL);
+
     int64_t insideCount = 0;
     int64_t outsideCount = 0;
-
-    char red_point_tab[SCREEN_WIDTH*SCREEN_HEIGHT];
-    memset(red_point_tab, 0, SCREEN_WIDTH*SCREEN_HEIGHT);
-    SDL_Point* red_point_buffer = malloc(sizeof(SDL_Point) * SCREEN_WIDTH * SCREEN_WIDTH);
-
-    char blue_point_tab[SCREEN_WIDTH*SCREEN_HEIGHT];
-    memset(blue_point_tab, 0, SCREEN_WIDTH*SCREEN_HEIGHT);
-    SDL_Point* blue_point_buffer = malloc(sizeof(SDL_Point) * SCREEN_WIDTH * SCREEN_WIDTH);
-
-
 
     SDL_Texture * char_texture;
     if(create_char_texture(renderer, "digits.bmp", &char_texture) < 0){
@@ -145,26 +143,17 @@ int main(){
         outsideCount += !inside;
 
         double pi = 4 * insideCount / (double)(insideCount + outsideCount);
+        
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_RenderClear(renderer);
 
         if(inside){
-            red_point_tab[xs + ys * SCREEN_WIDTH] = 1;
+            draw_pixel(renderer, canvas, &color1, xs, ys);
         }else{
-            blue_point_tab[xs + ys * SCREEN_WIDTH] = 1;
+            draw_pixel(renderer, canvas, &color2, xs, ys);
         }
 
-        int rn = fill_point_buffer(red_point_buffer, red_point_tab);
-        int bn = fill_point_buffer(blue_point_buffer, blue_point_tab);
-
-        //printf("%lf %ld\n", pi, insideCount + outsideCount);
-        
-        if(SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF) <0 ) fprintf(stderr, "background color %s\n", SDL_GetError());
-        SDL_RenderClear(renderer);
-        
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, 0xFF);
-        if(SDL_RenderDrawPoints(renderer, red_point_buffer, rn) < 0) fprintf(stderr, "draw points %s\n", SDL_GetError());
-
-        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0xFF, 0xFF);
-        SDL_RenderDrawPoints(renderer, blue_point_buffer, bn);
+        SDL_RenderCopy(renderer, canvas, NULL, NULL);
     
         char pi_chars[30];
         sprintf(pi_chars, "%.15lf", pi);
