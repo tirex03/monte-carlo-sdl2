@@ -1,4 +1,4 @@
-AC_INIT([montecarlo], [0.0.1])
+AC_INIT([montecarlo], [0.0.2])
 AM_INIT_AUTOMAKE([-Wall])
 AC_CONFIG_SRCDIR([src/main.c])
 AC_PROG_CC

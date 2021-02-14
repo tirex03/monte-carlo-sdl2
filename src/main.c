@@ -156,6 +156,8 @@ int main(){
     int frame_counter_max = 5000;
     uint32_t last_ticks = SDL_GetTicks();
 
+    uint32_t last_text_update = SDL_GetTicks();
+
     while(1){
         SDL_Event event;
         while(SDL_PollEvent(&event)){
@@ -204,12 +206,14 @@ int main(){
         sprintf(pi_chars, "%.15lf", pi);
         sprintf(iter_chars, "%ld", insideCount+outsideCount);
 
-        if(frame_counter % 200 == 0)
+        
+        if(SDL_GetTicks() - last_text_update > 15){
+            last_text_update = SDL_GetTicks();
             print_text(renderer, font_texture, 11, pi_text_canvas, fontmap, pi_chars);
-        SDL_RenderCopy(renderer, pi_text_canvas, NULL, &pi_text_rect);
-
-        if(frame_counter % 200 == 0)
             print_text(renderer, font_texture, 11, iter_text_canvas, fontmap, iter_chars);
+        }
+
+        SDL_RenderCopy(renderer, pi_text_canvas, NULL, &pi_text_rect);
         SDL_RenderCopy(renderer, iter_text_canvas, NULL, &iter_text_rect);
 
         SDL_RenderPresent(renderer);
