@@ -128,8 +128,13 @@ int main(){
     int64_t insideCount = 0;
     int64_t outsideCount = 0;
 
+
+    char font_filename[1000];
+    strcpy(font_filename, FONTDIR);
+    strcat(font_filename, "/digits.bmp");
+
     SDL_Texture * font_texture;
-    if(create_font_texture(renderer, "digits.bmp", &font_texture) < 0){
+    if(create_font_texture(renderer, font_filename, &font_texture) < 0){
         fprintf(stderr, "create_font_texture failed: %s\n", SDL_GetError());
         return 1;
     }
