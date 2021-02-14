@@ -3,5 +3,6 @@ Makefile
 *.log
 *.cache
 *.o
+*.status
 montecarlo
 montecarlo-*
